@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First Trainer 2 — Writing</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --teal:#1a7d78;--teal-dark:#145f5b;--teal-light:#e8f4f3;
+    --grey-bg:#f5f5f3;--grey-border:#d8d8d5;--grey-text:#555;
+    --black:#1a1a1a;--white:#fff;--red:#c0392b;--green:#1e7e44;--amber:#e67e22;
+    --topbar-h:56px;--partbar-h:44px;--bottombar-h:52px;
+  }
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'DM Sans',sans-serif;background:var(--grey-bg);color:var(--black);display:flex;flex-direction:column;}
+  #topbar{background:var(--white);border-bottom:2px solid var(--grey-border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:var(--topbar-h);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .brand-text{font-size:15px;font-weight:600;line-height:1.2;}
+  .brand-text span{display:block;font-weight:300;color:var(--grey-text);font-size:11px;}
+  #timer-wrap{display:flex;align-items:center;gap:10px;background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;padding:7px 16px;}
+  #timer{font-family:'DM Sans',monospace;font-size:18px;font-weight:600;color:var(--teal);letter-spacing:2px;min-width:65px;text-align:center;}
+  #timer.warning{color:var(--amber);}
+  #timer.urgent{color:var(--red);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  #partbar{background:var(--white);border-bottom:1.5px solid var(--grey-border);display:flex;align-items:stretch;padding:0 16px;gap:2px;height:var(--partbar-h);flex-shrink:0;}
+  .part-tab{flex-shrink:0;padding:0 20px;height:100%;display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;color:var(--grey-text);border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;background:none;border-left:none;border-right:none;border-top:none;}
+  .part-tab:hover{color:var(--teal);background:var(--teal-light);}
+  .part-tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600;}
+  .q-range{background:var(--grey-border);color:var(--grey-text);font-size:11px;font-weight:500;padding:1px 6px;border-radius:10px;}
+  .part-tab.active .q-range{background:var(--teal);color:#fff;}
+  .score-dot{width:7px;height:7px;border-radius:50%;background:var(--grey-border);transition:background .2s;}
+  .score-dot.done{background:var(--teal);}
+  #main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
+  .part-panel{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;}
+  .part-panel.active{display:flex;}
+  .instruction-box{background:var(--white);border-bottom:1.5px solid var(--grey-border);padding:12px 28px;font-size:14px;line-height:1.6;flex-shrink:0;}
+  .instruction-box strong{font-weight:600;}
+  /* SPLIT — overflow visible so divider handle is never clipped */
+  .split-wrap{flex:1;display:flex;min-height:0;overflow:visible;}
+  .split-left{overflow-y:auto;background:var(--white);border-right:1.5px solid var(--grey-border);padding:24px 28px;flex:1;min-width:0;}
+  .split-divider{width:10px;background:var(--grey-border);cursor:col-resize;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+  .split-divider:hover,.split-divider.dragging{background:var(--teal-light);}
+  .split-handle{position:absolute;width:28px;height:28px;background:var(--white);border:1.5px solid var(--grey-border);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--grey-text);pointer-events:none;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+  .split-right{overflow-y:auto;background:var(--grey-bg);padding:24px 28px;flex:1;min-width:0;display:flex;flex-direction:column;}
+  #bottombar{background:var(--white);border-top:1.5px solid var(--grey-border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:var(--bottombar-h);flex-shrink:0;}
+  .part-dots{display:flex;gap:6px;align-items:center;}
+  .bottom-part-label{font-size:12px;color:var(--grey-text);font-weight:500;padding:4px 10px;border-radius:6px;border:1.5px solid var(--grey-border);cursor:pointer;background:none;}
+  .bottom-part-label.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .nav-btn{display:flex;align-items:center;gap:6px;padding:8px 20px;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid var(--grey-border);background:var(--white);color:var(--black);transition:all .12s;font-family:'DM Sans',sans-serif;}
+  .nav-btn:hover{border-color:var(--teal);}
+  .nav-btn.primary{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .nav-btn.primary:hover{background:var(--teal-dark);}
+  .nav-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .prompt-card{background:var(--white);border:2px solid var(--grey-border);border-radius:10px;padding:20px 22px;font-family:'Source Serif 4',serif;font-size:15px;line-height:1.8;}
+  .prompt-header{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal);margin-bottom:10px;}
+  .notes-box{background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;padding:14px 16px;margin-top:14px;}
+  .notes-label{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--grey-text);margin-bottom:8px;}
+  .notes-box ol{padding-left:18px;font-family:'Source Serif 4',serif;font-size:14px;line-height:1.9;}
+  .notes-box li.open{color:var(--grey-text);font-style:italic;}
+  .writing-panel{display:flex;flex-direction:column;height:100%;}
+  .writing-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0;}
+  .writing-meta-left{font-size:13px;font-weight:600;}
+  .word-count-display{font-size:13px;font-weight:600;padding:4px 12px;border-radius:20px;background:var(--white);border:1.5px solid var(--grey-border);color:var(--grey-text);transition:all .2s;}
+  .word-count-display.ok{color:var(--green);border-color:var(--green);background:#edfbf3;}
+  .word-count-display.low{color:var(--amber);border-color:var(--amber);background:#fef5e7;}
+  .word-count-display.over{color:var(--red);border-color:var(--red);background:#fdf0ef;}
+  .writing-textarea{flex:1;width:100%;border:1.5px solid var(--grey-border);border-radius:10px;padding:18px 20px;font-family:'Source Serif 4',serif;font-size:15px;line-height:1.85;color:var(--black);background:var(--white);resize:none;outline:none;transition:border-color .15s;}
+  .writing-textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(26,125,120,.08);}
+  .writing-textarea:disabled{background:var(--grey-bg);color:var(--grey-text);cursor:not-allowed;}
+  .word-target{font-size:12px;color:var(--grey-text);margin-top:8px;flex-shrink:0;text-align:right;}
+  h3.section-heading{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--grey-text);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--grey-border);}
+
+  /* TASK SELECTION */
+  .task-selector{margin-bottom:18px;flex-shrink:0;}
+  .task-selector-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--grey-text);margin-bottom:8px;}
+  .task-pills{display:flex;gap:8px;flex-wrap:wrap;}
+  .task-pill{padding:7px 16px;border-radius:20px;border:1.5px solid var(--grey-border);cursor:pointer;font-size:13px;font-weight:500;background:var(--white);transition:all .15s;color:var(--grey-text);font-family:'DM Sans',sans-serif;}
+  .task-pill:hover{border-color:var(--teal);color:var(--teal);}
+  .task-pill.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .task-pill.confirmed{background:var(--green);color:#fff;border-color:var(--green);}
+  .answered-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:6px;vertical-align:middle;}
+
+  /* TASK CONFIRM BANNER */
+  .task-confirm-banner{background:var(--teal-light);border:1.5px solid var(--teal);border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;}
+  .task-confirm-banner strong{color:var(--teal-dark);}
+  .task-confirm-banner button{background:none;border:none;color:var(--teal);cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;text-decoration:underline;}
+
+  /* MODALS */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:var(--white);border-radius:12px;padding:36px 44px;max-width:460px;width:92%;text-align:center;}
+  .modal-box h3{font-size:18px;font-weight:700;margin-bottom:10px;}
+  .modal-box p{font-size:14px;color:var(--grey-text);margin-bottom:24px;line-height:1.6;}
+  .modal-btns{display:flex;gap:12px;}
+
+  /* TASK CONFIRM MODAL */
+  #task-confirm-modal .task-option{display:flex;flex-direction:column;align-items:flex-start;padding:14px 16px;border:1.5px solid var(--grey-border);border-radius:8px;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:10px;background:var(--white);width:100%;}
+  #task-confirm-modal .task-option:hover{border-color:var(--teal);background:var(--teal-light);}
+  #task-confirm-modal .task-option.selected{border-color:var(--teal);background:var(--teal-light);}
+  #task-confirm-modal .task-option-title{font-weight:700;font-size:14px;color:var(--black);margin-bottom:3px;}
+  #task-confirm-modal .task-option-desc{font-size:12px;color:var(--grey-text);}
+
+  /* RESULTS */
+  #report-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;align-items:center;justify-content:center;}
+  #report-overlay.show{display:flex;}
+  #report-modal{background:var(--white);border-radius:14px;max-width:700px;width:96%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+  .report-header{padding:22px 28px 0;border-bottom:1.5px solid var(--grey-border);flex-shrink:0;}
+  .report-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .report-header h2{font-size:20px;font-weight:700;}
+  .report-tabs{display:flex;gap:0;}
+  .report-tab{padding:8px 20px;border:none;border-bottom:3px solid transparent;background:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--grey-text);cursor:pointer;}
+  .report-tab.active{border-bottom-color:var(--teal);color:var(--teal);font-weight:600;}
+  .report-body{flex:1;overflow-y:auto;padding:24px 28px;}
+  .submission-card{background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:10px;padding:16px 20px;margin-bottom:16px;}
+  .submission-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .submission-card-header h4{font-size:14px;font-weight:700;}
+  .task-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--teal-light);color:var(--teal-dark);}
+  .sub-text{font-family:'Source Serif 4',serif;font-size:14px;line-height:1.8;color:var(--black);background:var(--white);border:1px solid var(--grey-border);border-radius:6px;padding:12px 14px;white-space:pre-wrap;}
+  .submission-meta{font-size:12px;color:var(--grey-text);margin-top:8px;}
+
+  /* RUBRIC SCORING */
+  .rubric-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;}
+  .rubric-table th{background:var(--teal);color:#fff;padding:8px 12px;text-align:left;font-weight:600;}
+  .rubric-table td{padding:10px 12px;border-bottom:1px solid var(--grey-border);vertical-align:top;}
+  .rubric-table tr:last-child td{border-bottom:none;}
+  .rubric-table tr:nth-child(even) td{background:#fafafa;}
+  .criterion-score{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:700;font-size:14px;}
+  .score-5{background:#dcfce7;color:var(--green);}
+  .score-4{background:#d1fae5;color:#065f46;}
+  .score-3{background:#fef9c3;color:#854d0e;}
+  .score-2{background:#fef3c7;color:#92400e;}
+  .score-1{background:#fee2e2;color:var(--red);}
+  .score-0{background:#f3f4f6;color:#6b7280;}
+  .total-score-box{background:var(--teal-light);border:2px solid var(--teal);border-radius:10px;padding:16px 20px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;}
+  .total-score-box .big-score{font-size:36px;font-weight:800;color:var(--teal);}
+  .total-score-box .score-label{font-size:13px;color:var(--grey-text);}
+  .pass-badge{padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;}
+  .pass-badge.pass{background:#dcfce7;color:var(--green);}
+  .pass-badge.fail{background:#fee2e2;color:var(--red);}
+  .ai-loading{text-align:center;padding:24px;color:var(--grey-text);font-size:14px;}
+  .ai-loading .spinner{width:28px;height:28px;border:3px solid var(--grey-border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ai-feedback{font-size:13px;line-height:1.7;color:var(--grey-text);margin-top:6px;font-style:italic;}
+
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--grey-border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- START MODAL -->
+<div id="start-overlay" style="display:flex;position:fixed;inset:0;background:rgba(15,23,42,0.85);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--white);border-radius:14px;padding:44px 52px;max-width:480px;width:92%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.3);">
+    <div style="width:56px;height:56px;background:var(--teal);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:26px;">✍️</div>
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">First Trainer 2 — Practice Test 1</h2>
+    <p style="font-size:15px;color:var(--grey-text);margin-bottom:6px;">Writing</p>
+    <div style="background:var(--grey-bg);border-radius:8px;padding:14px 20px;margin:20px 0;text-align:left;font-size:14px;line-height:1.9;border:1.5px solid var(--grey-border);">
+      <div>⏱ <strong>80 minutes</strong> total</div>
+      <div>✏️ Part 1 (compulsory) + Part 2 (choose one)</div>
+      <div>📝 140–190 words per task</div>
+      <div>🎯 Score: 40 points total &nbsp;·&nbsp; Pass: 24+</div>
+    </div>
+    <p style="font-size:13px;color:var(--grey-text);margin-bottom:24px;">The timer starts when you click Begin. You must choose your Part 2 task before writing.</p>
+    <button onclick="startTest()" style="background:var(--teal);color:#fff;border:none;border-radius:8px;padding:14px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;">Begin Test →</button>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="brand-text">First Trainer 2 — Practice Test 1<span>Writing</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="index.html" style="display:flex;align-items:center;gap:5px;padding:7px 13px;border:1.5px solid var(--grey-border);border-radius:8px;background:var(--white);cursor:pointer;font-size:13px;font-weight:500;color:var(--grey-text);font-family:'DM Sans',sans-serif;text-decoration:none;transition:all .15s;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'" onmouseout="this.style.borderColor='var(--grey-border)';this.style.color='var(--grey-text)'">← Menu</a>
+    <button id="submit-btn" onclick="confirmSubmit()" style="display:flex;align-items:center;gap:6px;padding:7px 16px;border:1.5px solid var(--teal);border-radius:8px;background:var(--teal);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;">✓ Submit Writing</button>
+    <div id="timer-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <div id="timer">80:00</div>
+    </div>
+  </div>
+</div>
+
+<!-- PART NAV -->
+<div id="partbar">
+  <button class="part-tab active" onclick="goTo(0)" id="ptab0">Part 1 <span class="q-range">Essay</span><span class="score-dot" id="dot0"></span></button>
+  <button class="part-tab" onclick="goTo(1)" id="ptab1">Part 2 <span class="q-range" id="p2-tab-label">Choose task</span><span class="score-dot" id="dot1"></span></button>
+</div>
+
+<div id="main">
+
+<!-- PART 1 — ESSAY -->
+<div class="part-panel active" id="panel0">
+  <div class="instruction-box">
+    <strong>Question 1</strong> — You <strong>must</strong> answer this question. Write your answer in <strong>140–190 words</strong> in an appropriate style.
+  </div>
+  <div class="split-wrap" id="split1">
+    <div class="split-left" id="sl1">
+      <h3 class="section-heading">Part 1 — Essay (compulsory)</h3>
+      <div class="prompt-card">
+        <div class="prompt-header">Your task</div>
+        <div style="font-size:14px;line-height:1.75;font-family:'Source Serif 4',serif;">
+          In your English class, you have been talking about children's health. Now, your English teacher has asked you to write an essay for homework.<br><br>
+          Write your essay using <strong>all</strong> the notes and giving reasons for your point of view.
+        </div>
+        <div style="margin-top:16px;padding:14px 18px;background:var(--teal-light);border-radius:8px;border-left:4px solid var(--teal);">
+          <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--teal-dark);">More needs to be done to encourage children to spend time healthily outdoors. Do you agree?</div>
+        </div>
+        <div class="notes-box">
+          <div class="notes-label">Notes — Write about:</div>
+          <ol>
+            <li>benefits and disadvantages of children's outdoor activities</li>
+            <li>recommendations for parents and teachers</li>
+            <li class="open">…………………………………… (your own idea)</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="split-divider" id="div1"><div class="split-handle">↔</div></div>
+    <div class="split-right" id="sr1">
+      <div class="writing-panel">
+        <div class="writing-meta">
+          <div class="writing-meta-left">Your Essay</div>
+          <div><span class="word-count-display" id="wc0">0 words</span></div>
+        </div>
+        <textarea class="writing-textarea" id="ta0" placeholder="Write your essay here…" oninput="updateWordCount(0)"></textarea>
+        <div class="word-target">Target: 140–190 words</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PART 2 — CHOICE -->
+<div class="part-panel" id="panel1">
+  <div class="instruction-box">
+    <strong>Questions 2–4</strong> — Answer <strong>one</strong> of these questions. Write your answer in <strong>140–190 words</strong> in an appropriate style.
+  </div>
+  <div class="split-wrap" id="split2">
+    <div class="split-left" id="sl2">
+      <h3 class="section-heading">Part 2 — Choose one task</h3>
+
+      <!-- Task NOT yet confirmed: show selector -->
+      <div id="task-selector-area">
+        <div class="task-selector">
+          <div class="task-selector-label">Select your task</div>
+          <div class="task-pills">
+            <div class="task-pill active" id="pill-article" onclick="previewTask('article')">Q2 — Article</div>
+            <div class="task-pill" id="pill-review" onclick="previewTask('review')">Q3 — Review</div>
+            <div class="task-pill" id="pill-email" onclick="previewTask('email')">Q4 — Email</div>
+          </div>
+        </div>
+        <div id="task-preview-area"><!-- prompt previews injected here --></div>
+        <button onclick="confirmTaskChoice()" style="margin-top:18px;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:8px;">✓ Confirm this task and start writing →</button>
+      </div>
+
+      <!-- Task confirmed: show prompt only -->
+      <div id="task-confirmed-area" style="display:none;">
+        <div class="task-confirm-banner">
+          <span>✓ Your chosen task: <strong id="confirmed-task-name"></strong></span>
+          <button onclick="changeTask()">Change task</button>
+        </div>
+        <div id="task-confirmed-prompt"></div>
+      </div>
+    </div>
+    <div class="split-divider" id="div2"><div class="split-handle">↔</div></div>
+    <div class="split-right" id="sr2">
+      <div class="writing-panel">
+        <div class="writing-meta">
+          <div class="writing-meta-left" id="writing-label-p2">Select a task first</div>
+          <div><span class="word-count-display" id="wc1">0 words</span></div>
+        </div>
+        <textarea class="writing-textarea" id="ta1" placeholder="Confirm your task on the left to start writing…" oninput="updateWordCount(1)" disabled></textarea>
+        <div class="word-target">Target: 140–190 words</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- #main -->
+
+<!-- BOTTOM BAR -->
+<div id="bottombar">
+  <div class="part-dots" id="bottom-dots"></div>
+  <div style="display:flex;gap:10px;">
+    <button class="nav-btn" id="btn-prev" onclick="goTo(currentPart-1)" disabled>← Previous</button>
+    <button class="nav-btn primary" id="btn-next" onclick="goTo(currentPart+1)">Next →</button>
+  </div>
+</div>
+
+<!-- EXIT TO MENU MODAL -->
+<div class="modal-overlay" id="exit-overlay">
+  <div class="modal-box">
+    <div style="font-size:36px;margin-bottom:12px;">🏠</div>
+    <h3>Return to main menu?</h3>
+        <div style="background:#fef5e7;border:1.5px solid var(--amber);border-radius:8px;padding:12px 16px;margin-bottom:12px;text-align:left;font-size:13px;line-height:1.7;color:#92400e;">
+      <strong>⚠️ Your progress will be lost.</strong><br>Returning to the menu ends this session and your answers will not be saved.
+    </div>
+    <div style="background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;padding:12px 16px;margin-bottom:24px;text-align:left;font-size:13px;line-height:1.7;color:var(--grey-text);">
+      In a real Cambridge exam, leaving a section is not permitted. Only go back if you want to stop this attempt.
+    </div>
+    <div class="modal-btns">
+      <button class="nav-btn" onclick="document.getElementById('exit-overlay').classList.remove('show')" style="flex:1;justify-content:center;">Stay here</button>
+      <button class="nav-btn primary" onclick="confirmBackToMenu()" style="flex:1;justify-content:center;">Save &amp; go to menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM SUBMIT MODAL -->
+<div class="modal-overlay" id="confirm-overlay">
+  <div class="modal-box">
+    <div style="font-size:36px;margin-bottom:12px;">📋</div>
+    <h3>Submit your writing?</h3>
+    <p>Once submitted your answers will be locked and sent for marking.</p>
+    <div id="submit-warnings" style="margin-bottom:16px;"></div>
+    <div class="modal-btns">
+      <button class="nav-btn" onclick="document.getElementById('confirm-overlay').classList.remove('show')" style="flex:1;justify-content:center;">Cancel</button>
+      <button class="nav-btn primary" onclick="submitTest()" style="flex:1;justify-content:center;">Yes, submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPIRED MODAL -->
+<div class="modal-overlay" id="expired-overlay">
+  <div class="modal-box">
+    <div style="font-size:36px;margin-bottom:12px;">⏰</div>
+    <h3>Time is up!</h3>
+    <p>Your 80 minutes have expired. Your writing has been saved and submitted.</p>
+    <div class="modal-btns">
+      <button class="nav-btn primary" onclick="expiredSubmit()" style="flex:1;justify-content:center;">See Results</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="apikey-overlay">
+  <div class="modal-box" style="text-align:left;">
+    <div style="font-size:28px;margin-bottom:10px;">🤖</div>
+    <h3 style="margin-bottom:8px;">AI marking available</h3>
+    <p style="margin-bottom:16px;">If you have an Anthropic API key, enter it below to get instant automated feedback on your writing. Otherwise, skip this step and your teacher will mark it manually.</p>
+    <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;">Anthropic API key (optional)</label>
+    <input id="apikey-input-modal" type="password" placeholder="sk-ant-..."
+      style="width:100%;padding:10px 12px;border:1.5px solid var(--grey-border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:6px;"
+      onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--grey-border)'">
+    <div style="font-size:11px;color:var(--grey-text);margin-bottom:16px;">Your key is saved in this browser only and never shared.</div>
+    <div class="modal-btns">
+      <button class="nav-btn" style="flex:1;justify-content:center;" onclick="skipAIMarking()">Skip — teacher marks it</button>
+      <button class="nav-btn primary" style="flex:1;justify-content:center;" onclick="confirmAIKey()">Run AI marking →</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS MODAL -->
+<div id="report-overlay">
+  <div id="report-modal">
+    <div class="report-header">
+      <div class="report-header-top">
+        <h2>Writing — Results</h2>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button onclick="printWriting()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1.5px solid var(--grey-border);border-radius:8px;background:var(--white);cursor:pointer;font-size:13px;font-weight:500;color:var(--grey-text);font-family:'DM Sans',sans-serif;" onmouseover="this.style.borderColor='var(--teal)';this.style.color='var(--teal)'" onmouseout="this.style.borderColor='var(--grey-border)';this.style.color='var(--grey-text)'">🖨️ Print / PDF</button>
+          <button onclick="document.getElementById('report-overlay').style.display='none'" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--grey-text);" onmouseover="this.style.background='#fee2e2';this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.background='var(--grey-bg)';this.style.borderColor='var(--grey-border)';this.style.color='var(--grey-text)'">✕</button>
+        </div>
+      </div>
+      <div class="report-tabs">
+        <button class="report-tab active" id="rtab-scores" onclick="switchReportTab('scores')">📊 Scores</button>
+        <button class="report-tab" id="rtab-p1" onclick="switchReportTab('p1')">Part 1 — Essay</button>
+        <button class="report-tab" id="rtab-p2" onclick="switchReportTab('p2')">Part 2</button>
+        <button class="report-tab" id="rtab-teacher" onclick="switchReportTab('teacher')">✉️ Send to Teacher</button>
+      </div>
+    </div>
+    <div class="report-body" id="report-body-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══ TASK DATA ═══
+const taskData = {
+  article: {
+    name: 'Article (Q2)',
+    shortName: 'Article',
+    type: 'article',
+    prompt: `<div class="prompt-card">
+      <div class="prompt-header">Question 2 — Article</div>
+      <div style="font-size:14px;line-height:1.75;font-family:'Source Serif 4',serif;">You see this announcement on an English-language website.</div>
+      <div style="margin-top:14px;background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;padding:14px 16px;font-size:14px;line-height:1.8;">
+        <div style="font-weight:700;margin-bottom:6px;font-family:'DM Sans',sans-serif;">Articles wanted! — Music in education</div>
+        <div>Should everyone be taught music at school?</div>
+        <div>What are the advantages of learning about music?</div>
+        <div>Is it always worth spending a lot of time and money trying to learn an instrument?</div>
+        <div style="margin-top:8px;font-style:italic;font-size:13px;color:var(--grey-text);">The best articles will be published on this website.</div>
+      </div>
+      <div style="margin-top:12px;font-size:14px;font-family:'DM Sans',sans-serif;">Write your <strong>article</strong> in 140–190 words in an appropriate style.</div>
+    </div>`
+  },
+  review: {
+    name: 'Review (Q3)',
+    shortName: 'Review',
+    type: 'review',
+    prompt: `<div class="prompt-card">
+      <div class="prompt-header">Question 3 — Review</div>
+      <div style="font-size:14px;line-height:1.75;font-family:'Source Serif 4',serif;">You see this announcement in your college English-language magazine.</div>
+      <div style="margin-top:14px;background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;padding:14px 16px;font-size:14px;line-height:1.8;">
+        <div style="font-weight:700;margin-bottom:6px;font-family:'DM Sans',sans-serif;">Film reviews wanted!</div>
+        <div>Have you seen a film featuring an interesting family?</div>
+        <div>Write a review of the film, explaining what was interesting about the family, and what influence they had on the story.</div>
+        <div style="margin-top:8px;font-style:italic;font-size:13px;color:var(--grey-text);">We will publish the best reviews in this magazine.</div>
+      </div>
+      <div style="margin-top:12px;font-size:14px;font-family:'DM Sans',sans-serif;">Write your <strong>review</strong> in 140–190 words in an appropriate style.</div>
+    </div>`
+  },
+  email: {
+    name: 'Email (Q4)',
+    shortName: 'Email',
+    type: 'email',
+    prompt: `<div class="prompt-card">
+      <div class="prompt-header">Question 4 — Email</div>
+      <div style="font-size:14px;line-height:1.75;font-family:'Source Serif 4',serif;">This is part of an email you receive from an Australian friend.</div>
+      <div style="margin-top:14px;background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:8px;padding:14px 16px;font-family:'Source Serif 4',serif;font-style:italic;font-size:14px;line-height:1.8;">
+        For my college course, I'm doing a project about public parks in towns and cities around the world, and the benefits they bring to people. What problems do parks face in your country? What can be done to improve and maintain them, and who should be responsible for this work?
+      </div>
+      <div style="margin-top:12px;font-size:14px;font-family:'DM Sans',sans-serif;">Write your <strong>email</strong> in 140–190 words in an appropriate style.</div>
+    </div>`
+  }
+};
+
+// ═══ TIMER ═══
+let totalSeconds = 80*60;
+let timerRunning = false;
+let timerInterval = null;
+let testSubmitted = false;
+let testStartTime = null;
+const timerEl = document.getElementById('timer');
+
+function startTest(){
+  document.getElementById('start-overlay').style.display='none';
+  timerRunning=true;
+  testStartTime=Date.now();
+  // Init Part 2 preview
+  previewTask('article');
+  timerInterval=setInterval(()=>{
+    if(totalSeconds<=0){clearInterval(timerInterval);timerEl.textContent='00:00';timerEl.className='urgent';if(!testSubmitted){testSubmitted=true;document.querySelectorAll('.writing-textarea').forEach(ta=>ta.disabled=true);saveProgress();document.getElementById('expired-overlay').classList.add('show');}return;}
+    totalSeconds--;
+    const m=Math.floor(totalSeconds/60),s=totalSeconds%60;
+    timerEl.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    timerEl.className=totalSeconds<300?'urgent':totalSeconds<900?'warning':'';
+  },1000);
+}
+
+
+
+// ═══ NAVIGATION ═══
+let currentPart=0;
+function goTo(n){
+  if(n<0||n>1)return;
+  document.querySelectorAll('.part-panel').forEach((p,i)=>p.classList.toggle('active',i===n));
+  document.querySelectorAll('.part-tab').forEach((t,i)=>t.classList.toggle('active',i===n));
+  document.querySelectorAll('.bottom-part-label').forEach((t,i)=>t.classList.toggle('active',i===n));
+  currentPart=n;
+  document.getElementById('btn-prev').disabled=n===0;
+  document.getElementById('btn-next').style.display=n<1?'flex':'none';
+}
+const bd=document.getElementById('bottom-dots');
+['Part 1','Part 2'].forEach((l,i)=>{
+  const b=document.createElement('button');
+  b.className='bottom-part-label'+(i===0?' active':'');
+  b.textContent=l;b.onclick=()=>goTo(i);bd.appendChild(b);
+});
+
+// ═══ WORD COUNT ═══
+function countWords(text){return text.trim()===''?0:text.trim().split(/\s+/).length;}
+function updateWordCount(idx){
+  const ta=document.getElementById('ta'+idx);
+  const wc=document.getElementById('wc'+idx);
+  const n=countWords(ta.value);
+  wc.textContent=n+' words';
+  wc.className='word-count-display '+(n>=140&&n<=190?'ok':n>190?'over':'low');
+  document.getElementById('dot'+idx).classList.toggle('done',n>=140&&n<=190);
+  if(idx===1&&confirmedTask) saveProgress();
+}
+
+// ═══ TASK SELECTION ═══
+let previewedTask='article';
+let confirmedTask=null;
+
+function previewTask(task){
+  previewedTask=task;
+  ['article','review','email'].forEach(t=>{
+    document.getElementById('pill-'+t).classList.toggle('active',t===task);
+  });
+  document.getElementById('task-preview-area').innerHTML=taskData[task].prompt;
+}
+
+function confirmTaskChoice(){
+  confirmedTask=previewedTask;
+  // Update UI
+  document.getElementById('task-selector-area').style.display='none';
+  document.getElementById('task-confirmed-area').style.display='block';
+  document.getElementById('confirmed-task-name').textContent=taskData[confirmedTask].name;
+  document.getElementById('task-confirmed-prompt').innerHTML=taskData[confirmedTask].prompt;
+  // Update tab label
+  document.getElementById('p2-tab-label').textContent=taskData[confirmedTask].shortName;
+  // Update writing panel
+  document.getElementById('writing-label-p2').textContent='Your '+taskData[confirmedTask].shortName;
+  document.getElementById('ta1').disabled=false;
+  document.getElementById('ta1').placeholder='Write your '+taskData[confirmedTask].shortName.toLowerCase()+' here…';
+}
+
+function changeTask(){
+  if(countWords(document.getElementById('ta1').value)>0){
+    if(!confirm('Changing task will clear your current writing. Are you sure?'))return;
+  }
+  confirmedTask=null;
+  document.getElementById('ta1').value='';
+  document.getElementById('ta1').disabled=true;
+  document.getElementById('ta1').placeholder='Confirm your task on the left to start writing…';
+  document.getElementById('writing-label-p2').textContent='Select a task first';
+  document.getElementById('wc1').textContent='0 words';
+  document.getElementById('wc1').className='word-count-display';
+  document.getElementById('dot1').classList.remove('done');
+  document.getElementById('p2-tab-label').textContent='Choose task';
+  document.getElementById('task-selector-area').style.display='block';
+  document.getElementById('task-confirmed-area').style.display='none';
+  previewTask('article');
+}
+
+function backToMenu(){
+  document.getElementById('exit-overlay').classList.add('show');
+}
+function confirmBackToMenu(){
+  // Pause timer
+  if(timerInterval) clearInterval(timerInterval);
+  // Save current state including time left
+  const data={
+    p1:document.getElementById('ta0').value,
+    p2:document.getElementById('ta1').value,
+    confirmedTask,
+    totalSecondsLeft:totalSeconds,
+    submitted:false,
+    inProgress:true
+  };
+  sessionStorage.setItem('fce_writing_progress', JSON.stringify(data));
+  window.location.href='index.html';
+}
+
+// ═══ SAVE PROGRESS ═══
+function saveProgress(){
+  const p1=document.getElementById('ta0').value;
+  const p2=document.getElementById('ta1').value;
+  const data={
+    p1:p1,p2:p2,confirmedTask,
+    totalSecondsLeft:totalSeconds,
+    submitted:testSubmitted
+  };
+  sessionStorage.setItem('fce_writing_progress',JSON.stringify(data));
+  if(testSubmitted){
+    try{
+      const used=80*60-totalSeconds;
+      const um=Math.floor(used/60),us=used%60;
+      const lsData={
+        submitted:true,
+        p1Text:p1,p1Words:countWords(p1),
+        p2Text:p2,p2Words:countWords(p2),
+        p2Task:confirmedTask?(taskData[confirmedTask]?taskData[confirmedTask].shortName:confirmedTask):'',
+        timeUsed:String(um).padStart(2,'0')+':'+String(us).padStart(2,'0'),
+        aiScores:aiScores.p1||aiScores.p2?aiScores:null
+      };
+      localStorage.setItem('fce_t1_writing',JSON.stringify(lsData));
+    }catch(e){}
+  }
+}
+function loadProgress(){
+  const raw=sessionStorage.getItem('fce_writing_progress');
+  if(!raw)return;
+  const data=JSON.parse(raw);
+  if(data.submitted)return; // don't reload a completed test
+  if(data.totalSecondsLeft) totalSeconds=data.totalSecondsLeft;
+  if(data.p1)document.getElementById('ta0').value=data.p1;
+  if(data.confirmedTask){confirmedTask=data.confirmedTask;previewedTask=data.confirmedTask;confirmTaskChoice();}
+  if(data.p2&&confirmedTask)document.getElementById('ta1').value=data.p2;
+  updateWordCount(0);updateWordCount(1);
+}
+
+// ═══ SUBMIT ═══
+function confirmSubmit(){
+  if(testSubmitted){showReport(null,true);return;}
+  const p1w=countWords(document.getElementById('ta0').value);
+  const p2w=countWords(document.getElementById('ta1').value);
+  let warnings='';
+  if(p1w<140)warnings+=`<div style="background:#fef5e7;border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;color:#92400e;margin-bottom:8px;">⚠️ Part 1 is ${p1w===0?'blank':p1w+' words — below the 140 minimum'}.</div>`;
+  if(!confirmedTask)warnings+=`<div style="background:#fef5e7;border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;color:#92400e;margin-bottom:8px;">⚠️ No Part 2 task has been confirmed.</div>`;
+  else if(p2w<140)warnings+=`<div style="background:#fef5e7;border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;color:#92400e;margin-bottom:8px;">⚠️ Part 2 (${taskData[confirmedTask].shortName}) is ${p2w===0?'blank':p2w+' words — below the 140 minimum'}.</div>`;
+  document.getElementById('submit-warnings').innerHTML=warnings;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function submitTest(){
+  document.getElementById('confirm-overlay').classList.remove('show');
+  testSubmitted=true;
+  if(timerInterval)clearInterval(timerInterval);
+  document.querySelectorAll('.writing-textarea').forEach(ta=>ta.disabled=true);
+  saveProgress();
+  // Pre-fill API key if saved
+  const savedKey=localStorage.getItem('fce_apikey')||'';
+  document.getElementById('apikey-input-modal').value=savedKey;
+  document.getElementById('apikey-overlay').classList.add('show');
+}
+
+let aiScores={p1:null,p2:null};
+let aiMarkingRequested=false;
+
+function skipAIMarking(){
+  aiMarkingRequested=false;
+  document.getElementById('apikey-overlay').classList.remove('show');
+  showReport(null,'teacher');
+}
+
+function confirmAIKey(){
+  const key=document.getElementById('apikey-input-modal').value.trim();
+  aiMarkingRequested=!!key;
+  if(key) localStorage.setItem('fce_apikey',key);
+  document.getElementById('apikey-overlay').classList.remove('show');
+  showReport(key||null,'scores');
+}
+function expiredSubmit(){
+  document.getElementById('expired-overlay').classList.remove('show');
+  const savedKey=localStorage.getItem('fce_apikey')||'';
+  document.getElementById('apikey-input-modal').value=savedKey;
+  document.getElementById('apikey-overlay').classList.add('show');
+}
+
+// ═══ REPORT ═══
+let reportData={p1:{text:'',words:0},p2:{text:'',words:0,task:null}};
+
+function showReport(apiKey=null, startTab='scores', reopening=false){
+  const p1text=document.getElementById('ta0').value.trim();
+  const p1w=countWords(p1text);
+  const p2text=document.getElementById('ta1').value.trim();
+  const p2w=countWords(p2text);
+  const used=80*60-totalSeconds;
+  const um=Math.floor(used/60),us=used%60;
+  reportData={
+    p1:{text:p1text,words:p1w},
+    p2:{text:p2text,words:p2w,task:confirmedTask},
+    timeUsed:`${String(um).padStart(2,'0')}:${String(us).padStart(2,'0')}`
+  };
+  const p2TaskLabel=confirmedTask?taskData[confirmedTask].shortName:'Part 2';
+  document.getElementById('rtab-p2').textContent=`Part 2 — ${p2TaskLabel}`;
+  switchReportTab(startTab);
+  document.getElementById('report-overlay').style.display='flex';
+  if(!reopening && apiKey) markWithAI(apiKey);
+}
+
+function switchReportTab(tab){
+  ['scores','p1','p2','teacher'].forEach(t=>{
+    const el=document.getElementById('rtab-'+t);
+    if(el) el.classList.toggle('active',t===tab);
+  });
+  if(tab==='scores') renderScoresTab();
+  else if(tab==='p1') renderSubmissionTab('p1');
+  else if(tab==='p2') renderSubmissionTab('p2');
+  else renderTeacherTab();
+}
+
+function renderTeacherTab(){
+  const savedApiKey=localStorage.getItem('fce_apikey')||'';
+  document.getElementById('report-body-content').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- PRINT FOR TEACHER -->
+      <div style="background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:10px;padding:18px 20px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">🖨️ Print for teacher</div>
+        <div style="font-size:12px;color:var(--grey-text);margin-bottom:14px;">Generates a printable sheet with your written answers and a blank Cambridge marking rubric for your teacher to fill in.</div>
+        <button onclick="printForTeacher()" style="width:100%;padding:10px;background:var(--teal);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Print / Save as PDF →</button>
+      </div>
+
+      <!-- AI MARKING -->
+      <div style="background:var(--grey-bg);border:1.5px solid var(--grey-border);border-radius:10px;padding:18px 20px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">🤖 AI marking (optional)</div>
+        <div style="font-size:12px;color:var(--grey-text);margin-bottom:14px;">If you have an Anthropic API key, enter it here to get automated rubric-based feedback. The key is saved in your browser only and never shared.</div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px;">Anthropic API key</label>
+        <input id="api-key-input" type="password" value="${savedApiKey}" placeholder="sk-ant-..."
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--grey-border);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;"
+          onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--grey-border)'"
+          onchange="localStorage.setItem('fce_apikey',this.value)">
+        <button onclick="runAIMarkingWithKey()" style="width:100%;padding:9px;background:var(--white);color:var(--teal);border:1.5px solid var(--teal);border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Run AI marking →</button>
+        <div id="ai-key-status" style="font-size:12px;color:var(--grey-text);margin-top:8px;"></div>
+      </div>
+
+    </div>`;
+}
+
+
+async function runAIMarkingWithKey(){
+  const key=document.getElementById('api-key-input').value.trim();
+  if(!key){document.getElementById('ai-key-status').textContent='Please enter your API key first.';return;}
+  localStorage.setItem('fce_apikey',key);
+  document.getElementById('ai-key-status').textContent='⏳ Marking in progress…';
+  // Temporarily set apiKey and call markWithAI
+  window._tempApiKey=key;
+  try{
+    await markWithAI(key);
+    document.getElementById('ai-key-status').textContent='✓ Marking complete. Switch to the Scores tab to see results.';
+  }catch(e){
+    document.getElementById('ai-key-status').textContent='✗ Error: '+e.message;
+  }
+}
+
+function renderScoresTab(){
+  const rd=reportData;
+  const p1Score=aiScores.p1;
+  const p2Score=aiScores.p2;
+  const bothReady=p1Score&&p2Score&&!p1Score.error&&!p2Score.error;
+  const totalP1=p1Score?p1Score.total:null;
+  const totalP2=p2Score?p2Score.total:null;
+  const grand=(totalP1??0)+(totalP2??0);
+  const pass=grand>=24;
+  const skipped=!aiMarkingRequested;
+
+  const totalDisplay=bothReady
+    ?`<div style="font-size:48px;font-weight:800;color:var(--teal);">${grand} <span style="font-size:24px;color:var(--grey-text);font-weight:400;">/ 40</span></div>
+      <div style="margin-top:8px;"><span class="pass-badge ${pass?'pass':'fail'}">${pass?'PASS — 24+ achieved':'FAIL — below 24'}</span></div>`
+    :skipped
+      ?`<div style="font-size:16px;font-weight:600;color:var(--grey-text);margin:8px 0;">📋 Pending teacher review</div>
+        <div style="font-size:12px;color:var(--grey-text);">Use the <strong>Send to Teacher</strong> tab to print your writing for your teacher to mark.</div>`
+      :`<div style="font-size:18px;font-weight:600;color:var(--grey-text);margin:8px 0;">⏳ AI marking in progress…</div>`;
+
+  document.getElementById('report-body-content').innerHTML=`
+    <div style="text-align:center;margin-bottom:24px;">
+      ${totalDisplay}
+      <div style="font-size:13px;color:var(--grey-text);margin-top:8px;">⏱ Time used: ${rd.timeUsed||'—'} of 80:00</div>
+    </div>
+    ${renderPartScoreCard('Part 1 — Essay',p1Score,rd.p1.words)}
+    ${renderPartScoreCard('Part 2 — '+(rd.p2.task?taskData[rd.p2.task].shortName:'Not answered'),p2Score,rd.p2.words)}
+    ${(!bothReady&&!skipped)?'<div class="ai-loading"><div class="spinner"></div>AI is marking your writing… this takes about 10–15 seconds.</div>':''}
+  `;
+}
+
+function renderPartScoreCard(title,score,words){
+  if(!score && !aiMarkingRequested) return `<div class="submission-card"><div class="submission-card-header"><h4>${title}</h4><span class="task-badge">${words} words</span></div><div style="padding:10px 0;font-size:13px;color:var(--grey-text);">📋 Pending teacher marking</div></div>`;
+  if(!score) return `<div class="submission-card"><div class="submission-card-header"><h4>${title}</h4><span class="task-badge">${words} words</span></div><div class="ai-loading" style="padding:12px 0;"><div class="spinner" style="width:20px;height:20px;border-width:2px;"></div></div></div>`;
+  if(score.error) return `<div class="submission-card"><div class="submission-card-header"><h4>${title}</h4><span class="task-badge">${words} words</span></div>
+    <div style="padding:12px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="font-size:13px;color:var(--red);">⚠ AI marking failed — check your API key and try again.</div>
+      <button onclick="retryAIMarking()" style="padding:6px 14px;border:1.5px solid var(--teal);border-radius:7px;background:var(--white);color:var(--teal);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">↺ Retry</button>
+    </div></div>`;
+  const criteria=[
+    {name:'Content',score:score.content,feedback:score.contentFeedback},
+    {name:'Communicative Achievement',score:score.communicative,feedback:score.communicativeFeedback},
+    {name:'Organisation',score:score.organisation,feedback:score.organisationFeedback},
+    {name:'Language',score:score.language,feedback:score.languageFeedback},
+  ];
+  const rows=criteria.map(c=>`
+    <tr>
+      <td><strong>${c.name}</strong><div class="ai-feedback">${c.feedback||''}</div></td>
+      <td style="text-align:center;"><span class="criterion-score score-${c.score}">${c.score}</span></td>
+    </tr>`).join('');
+  return `
+    <div class="submission-card">
+      <div class="submission-card-header"><h4>${title}</h4><span class="task-badge">${words} words</span></div>
+      <table class="rubric-table">
+        <thead><tr><th>Criterion</th><th style="text-align:center;">Score (0–5)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="total-score-box" style="margin-top:12px;">
+        <div><div class="score-label">Part total</div><div style="font-size:11px;color:var(--grey-text);">Max 20 pts (4 × 5)</div></div>
+        <div class="big-score">${score.total} <span style="font-size:18px;color:var(--grey-text);font-weight:400;">/ 20</span></div>
+      </div>
+    </div>`;
+}
+
+function renderSubmissionTab(part){
+  const rd=part==='p1'?reportData.p1:reportData.p2;
+  const title=part==='p1'?'Part 1 — Essay':'Part 2 — '+(reportData.p2.task?taskData[reportData.p2.task].shortName:'Not answered');
+  document.getElementById('report-body-content').innerHTML=`
+    <div class="submission-card">
+      <div class="submission-card-header"><h4>${title}</h4><span class="task-badge">${rd.words} words</span></div>
+      <div class="sub-text">${rd.text||'<em style="color:var(--grey-text)">No answer written.</em>'}</div>
+      <div class="submission-meta">${rd.words>=140&&rd.words<=190?'✓ Within word limit':'⚠ '+rd.words+' words — target 140–190'}</div>
+    </div>`;
+}
+
+// ═══ AI MARKING ═══
+async function retryAIMarking(){
+  aiScores={p1:null,p2:null};
+  aiMarkingRequested=true;
+  renderScoresTab();
+  const key=localStorage.getItem('fce_apikey')||'';
+  await markWithAI(key||null);
+}
+
+async function markWithAI(providedKey=null){
+  const p1=reportData.p1.text;
+  const p2=reportData.p2.text;
+  const p2task=reportData.p2.task;
+
+  // Task instruction texts for accurate content marking
+  const p1Instructions = `In your English class, you have been talking about children's health. Your teacher has asked you to write an essay using ALL the notes and giving reasons for your point of view.
+
+Title/question: "More needs to be done to encourage children to spend time healthily outdoors. Do you agree?"
+
+Required points to cover:
+1. Benefits and disadvantages of children's outdoor activities
+2. Recommendations for parents and teachers
+3. Your own idea (student's choice)
+
+Target reader: English teacher. Format: discursive essay. Word count: 140-190 words.`;
+
+  const taskInstructions = {
+    article: `Articles wanted! - Music in education (English-language website)
+- Should everyone be taught music at school?
+- What are the advantages of learning about music?
+- Is it always worth spending a lot of time and money trying to learn an instrument?
+Target reader: general website audience. Format: article with a title. Word count: 140-190 words.`,
+    review: `Film reviews wanted! (college English-language magazine)
+Have you seen a film featuring an interesting family? Write a review explaining what was interesting about the family, and what influence they had on the story.
+Target reader: college magazine readers. Format: review with a title. Word count: 140-190 words.`,
+    email: `Reply to an email from an Australian friend who asks:
+"What problems do parks face in your country? What can be done to improve and maintain them, and who should be responsible for this work?"
+Target reader: Australian friend. Format: informal email. Word count: 140-190 words.`
+  };
+
+  const p2TaskKey = reportData.p2.task;
+  const p2Instructions = p2TaskKey && taskInstructions[p2TaskKey] ? taskInstructions[p2TaskKey] : 'A writing task.';
+
+  const rubricInstruction=`You are a Cambridge B2 First (FCE) examiner marking student writing in a practice exam context. Be fair and calibrated — this is timed practice with no dictionaries or notes. Reward genuine effort and clear communication. Do not penalise minor slips that do not impede meaning.
+
+CALIBRATION GUIDE:
+- 3 = solid B2 attempt with some errors — this is the expected level for most students
+- 4-5 = genuinely strong B2/C1 writing — reserve for clearly impressive work
+- 1-2 = clearly weak writing with frequent impeding errors or major task failure
+- 0 = ONLY for gibberish, copied text, completely off-topic, or fewer than 40 coherent words
+
+Score each criterion 0-5:
+
+CONTENT: Does the writing address the specific required points of the task? Is the target reader fully informed?
+5 = All required points addressed thoroughly
+4 = All points addressed, some less fully developed
+3 = Most required points covered; target reader generally informed
+2 = Significant gaps or partially irrelevant content
+1 = Only superficial attempt; major points missing
+0 = Task not addressed
+
+COMMUNICATIVE ACHIEVEMENT: Is register and format appropriate? Does it achieve its communicative purpose?
+5 = Fully appropriate register and format, consistently achieves purpose
+4 = Mostly appropriate, effective communication with minor lapses
+3 = Generally appropriate register; communicates adequately
+2 = Partly fails in register or format; communication unclear at times
+1 = Largely inappropriate
+0 = No attempt at appropriate communication
+
+ORGANISATION: Logical structure and cohesive devices?
+5 = Clear logical organisation; varied cohesive devices used naturally
+4 = Well organised; good linking and referencing
+3 = Generally organised with clear paragraphing; uses basic linkers
+2 = Some organisation but inconsistent; limited or mechanical linking
+1 = Little organisation; ideas poorly connected
+0 = No discernible organisation
+
+LANGUAGE: Range and accuracy of vocabulary and grammar?
+5 = Wide range including complex structures; only minor slips
+4 = Good range; occasional non-impeding errors
+3 = Adequate for B2; errors present but meaning generally clear
+2 = Limited range; errors sometimes impede communication
+1 = Very limited; frequent impeding errors
+0 = No controlled language use
+
+Give feedback that is specific, constructive, and encouraging. Mention one strength and one area to improve per criterion where possible.
+
+Respond ONLY with valid JSON, no preamble or markdown:
+{"content":N,"contentFeedback":"one sentence","communicative":N,"communicativeFeedback":"one sentence","organisation":N,"organisationFeedback":"one sentence","language":N,"languageFeedback":"one sentence"}`;
+
+  async function scoreOne(taskLabel,taskInstructions,text){
+    if(!text||text.trim().length<10) return {content:0,contentFeedback:'No answer provided.',communicative:0,communicativeFeedback:'No answer provided.',organisation:0,organisationFeedback:'No answer provided.',language:0,languageFeedback:'No answer provided.',total:0};
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true',
+          ...(providedKey?{'x-api-key':providedKey}:{})
+        },
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:600,
+          messages:[{role:'user',content:`${rubricInstruction}\n\n---\nTASK TYPE: ${taskLabel}\n\nFULL TASK INSTRUCTIONS:\n${taskInstructions}\n\n---\nSTUDENT'S WRITING:\n${text}`}]
+        })
+      });
+      const data=await res.json();
+      const raw=data.content[0].text.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(raw);
+      parsed.total=(parsed.content||0)+(parsed.communicative||0)+(parsed.organisation||0)+(parsed.language||0);
+      return parsed;
+    }catch(e){
+      return {content:0,contentFeedback:'Marking error — please try again.',communicative:0,communicativeFeedback:'Marking error — please try again.',organisation:0,organisationFeedback:'Marking error — please try again.',language:0,languageFeedback:'Marking error — please try again.',total:0,error:true};
+    }
+  }
+
+  // Mark both in parallel
+  const [s1,s2]=await Promise.all([
+    scoreOne('Part 1 — Essay',p1Instructions,p1),
+    scoreOne('Part 2 — '+(p2TaskKey?taskData[p2TaskKey].shortName:'Task'),p2Instructions,p2)
+  ]);
+  aiScores.p1=s1;
+  aiScores.p2=s2;
+
+  // Save to sessionStorage
+  const saved=JSON.parse(sessionStorage.getItem('fce_writing_progress')||'{}');
+  saved.aiScores=aiScores;
+  saved.submitted=true;
+  sessionStorage.setItem('fce_writing_progress',JSON.stringify(saved));
+  // Update localStorage with AI scores
+  try{
+    const lsRaw=localStorage.getItem('fce_t1_writing');
+    if(lsRaw){
+      const lsData=JSON.parse(lsRaw);
+      lsData.aiScores=aiScores;
+      localStorage.setItem('fce_t1_writing',JSON.stringify(lsData));
+    }
+  }catch(e){}
+
+  // Re-render if scores tab is active
+  if(document.getElementById('rtab-scores').classList.contains('active')) renderScoresTab();
+}
+
+// ═══ PRINT ═══
+function printForTeacher(){
+  const name=localStorage.getItem('fce_student_name')||'Student';
+  const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const p1=reportData.p1||{};
+  const p2=reportData.p2||{};
+  const p2TaskLabel=p2.task?taskData[p2.task].shortName:'Task';
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  const win=window.open('','_blank','width=820,height=1100');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Writing — ${name}</title>
+  <style>
+    body{font-family:Arial,sans-serif;max-width:680px;margin:40px auto;font-size:14px;line-height:1.6;color:#1a1a1a;}
+    h1{font-size:18px;margin-bottom:4px;}
+    .meta{font-size:12px;color:#555;margin-bottom:24px;}
+    h2{font-size:14px;margin:28px 0 8px;border-bottom:2px solid #1a7d78;padding-bottom:4px;color:#1a7d78;}
+    .writing-text{background:#f5f5f3;padding:14px 16px;font-size:14px;line-height:1.8;white-space:pre-wrap;border-radius:6px;min-height:120px;}
+    .score-box{border:1px solid #d8d8d5;border-radius:6px;padding:12px 16px;margin-top:24px;}
+    .score-box h3{font-size:13px;font-weight:700;margin-bottom:10px;}
+    .score-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;font-size:13px;}
+    .score-row:last-child{border-bottom:none;font-weight:700;}
+    @media print{body{margin:20px;}}
+  </style></head><body>
+  <h1>B2 First Writing — Practice Test 1</h1>
+  <div class="meta">${name} &nbsp;·&nbsp; ${date}</div>
+  <h2>Part 1 — Essay (${p1.words||0} words)</h2>
+  <div class="writing-text">${esc(p1.text)}</div>
+  <h2>Part 2 — ${esc(p2TaskLabel)} (${p2.words||0} words)</h2>
+  <div class="writing-text">${esc(p2.text)}</div>
+  <div class="score-box">
+    <h3>Teacher marking — Cambridge rubric (0–5 per criterion, per task)</h3>
+    <div class="score-row"><span>Content</span><span>Part 1: ___/5 &nbsp;&nbsp; Part 2: ___/5</span></div>
+    <div class="score-row"><span>Communicative Achievement</span><span>Part 1: ___/5 &nbsp;&nbsp; Part 2: ___/5</span></div>
+    <div class="score-row"><span>Organisation</span><span>Part 1: ___/5 &nbsp;&nbsp; Part 2: ___/5</span></div>
+    <div class="score-row"><span>Language</span><span>Part 1: ___/5 &nbsp;&nbsp; Part 2: ___/5</span></div>
+    <div class="score-row"><span>Total</span><span>Part 1: ___/20 &nbsp;&nbsp; Part 2: ___/20 &nbsp;&nbsp; Combined: ___/40</span></div>
+  </div>
+  </body></html>`);
+  win.document.close();win.focus();setTimeout(()=>win.print(),500);
+}
+
+function printWriting(){
+  const rd=reportData;
+  const p1s=aiScores.p1;const p2s=aiScores.p2;
+  const grand=(p1s?p1s.total:0)+(p2s?p2s.total:0);
+  const used=80*60-totalSeconds;const um=Math.floor(used/60),us=used%60;
+  function criteriaRows(s){if(!s)return '<tr><td colspan="2">Marking in progress</td></tr>';
+    return [['Content',s.content,s.contentFeedback],['Communicative Achievement',s.communicative,s.communicativeFeedback],['Organisation',s.organisation,s.organisationFeedback],['Language',s.language,s.languageFeedback]]
+      .map(([name,sc,fb])=>`<tr><td>${name}<br><em style="color:#666;font-size:12px;">${fb}</em></td><td style="text-align:center;font-weight:700;">${sc}/5</td></tr>`).join('');
+  }
+  const win=window.open('','_blank','width=820,height=1100');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Writing Results</title>
+  <style>body{font-family:'Helvetica Neue',Arial,sans-serif;max-width:700px;margin:40px auto;color:#1a1a1a;font-size:14px;line-height:1.6;}
+  h1{font-size:20px;font-weight:700;}h2{font-size:16px;margin:24px 0 8px;}
+  table{width:100%;border-collapse:collapse;margin:8px 0;}th{background:#1a7d78;color:#fff;padding:8px 12px;text-align:left;}
+  td{padding:8px 12px;border-bottom:1px solid #eee;vertical-align:top;}
+  .total{font-weight:700;background:#e8f4f3;}.sub{color:#666;font-size:13px;margin-bottom:24px;}
+  pre{background:#f5f5f3;padding:16px;border-radius:6px;white-space:pre-wrap;font-family:Georgia,serif;font-size:14px;line-height:1.8;}
+  @media print{body{margin:20px;}}</style></head><body>
+  <h1>First Trainer 2 — Practice Test 1 — Writing</h1>
+  <div class="sub">Time used: ${String(um).padStart(2,'0')}:${String(us).padStart(2,'0')} of 80:00 &nbsp;·&nbsp; Total: ${grand}/40 &nbsp;·&nbsp; ${grand>=24?'PASS':'FAIL'}</div>
+  <h2>Part 1 — Essay (${rd.p1.words} words)</h2>
+  <table><thead><tr><th>Criterion</th><th>Score</th></tr></thead><tbody>${criteriaRows(p1s)}<tr class="total"><td>Total</td><td>${p1s?p1s.total:'-'}/20</td></tr></tbody></table>
+  <pre>${rd.p1.text||'(No answer)'}</pre>
+  <h2>Part 2 — ${rd.p2.task?taskData[rd.p2.task].name:'Not answered'} (${rd.p2.words} words)</h2>
+  <table><thead><tr><th>Criterion</th><th>Score</th></tr></thead><tbody>${criteriaRows(p2s)}<tr class="total"><td>Total</td><td>${p2s?p2s.total:'-'}/20</td></tr></tbody></table>
+  <pre>${rd.p2.text||'(No answer)'}</pre>
+  </body></html>`);
+  win.document.close();win.focus();setTimeout(()=>win.print(),600);
+}
+
+// ═══ SPLIT RESIZE ═══
+function makeSplittable(splitId,leftId,divId,rightId){
+  const wrap=document.getElementById(splitId);
+  const left=document.getElementById(leftId);
+  const right=document.getElementById(rightId);
+  const div=document.getElementById(divId);
+  if(!div)return;
+  let dragging=false,startX=0,startLeftW=0;
+  div.addEventListener('mousedown',e=>{dragging=true;startX=e.clientX;startLeftW=left.getBoundingClientRect().width;div.classList.add('dragging');document.body.style.userSelect='none';document.body.style.cursor='col-resize';});
+  document.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-startX;const total=wrap.getBoundingClientRect().width-10;let nw=Math.max(200,Math.min(total-200,startLeftW+dx));left.style.flex='none';left.style.width=nw+'px';right.style.flex='1';right.style.width='';});
+  document.addEventListener('mouseup',()=>{if(dragging){dragging=false;div.classList.remove('dragging');document.body.style.userSelect='';document.body.style.cursor='';}});
+}
+makeSplittable('split1','sl1','div1','sr1');
+makeSplittable('split2','sl2','div2','sr2');
+
+// Load any saved progress on page load
+window.addEventListener('load',()=>{ try{loadProgress();}catch(e){} });
+</script>
+</body>
+</html>
